@@ -1,0 +1,25 @@
+{% extends "inventory/base.html" %} 
+    {%block details%}
+    <ul class="messages">
+        {% for message in messages %}
+        {%if message.extra_tags == "RETURN_ERROR"%}
+            <div class="alert alert-danger">
+                <strong>Failed!</strong> {{message}}
+            </div>
+        {%endif%}
+        {% endfor %}
+    </ul>
+    <div style = "display: flex; flex-direction: column;align-items: center;">
+            <h1>Returning : {{item.item_name}}</h1>
+            {%if object.item_quantity%}
+                <h3 style = "color: #EEBC1D"><strong>You have : {{object.item_quantity}}</strong></h1>
+            {%else%}
+                <h3 style = "color: #EEBC1D"><strong>You have : 0</strong></h1>
+            {%endif%}
+            <form method="POST" style = "flex-direction: column; display: flexs;">
+                {% csrf_token %}
+                <input type = "number" name = "quantity_returned" placeholder="Quantity to Return" min = 0></input>
+                <input type = "submit"></input>
+            </form>
+        </div>
+    {% endblock %}
