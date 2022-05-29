@@ -12,6 +12,8 @@ urlpatterns = [
     path('<int:pk>/delete', ItemDeleteView.as_view(), name='item-delete'),
     path('<int:pk>/issue', views.issue_item, name='item-issue'),
     path('<int:pk>/return', views.return_item, name='item-return'),
-    path('<username>/profile', views.user_profile, name='user-profile')
-
+    path('<username>/profile', views.user_profile, name='user-profile'),
+    path('file-upload/', views.file_parse, name='file-upload'),
+    path('download/<filename>',
+         views.download_inventory, name='download-inventory'),
 ]

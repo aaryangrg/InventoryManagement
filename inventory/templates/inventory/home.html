@@ -11,4 +11,10 @@
     View Details
   </button>
 </div>
-{% endfor %} {% endblock%}
+{% endfor %} {% endblock%} {%block details%}{%if download_allowed%}
+<div>
+  <a class="btn btn-info" href="{%url 'download-inventory' 'inventory.csv'%}"
+    >Download Inventory</a
+  >
+</div>
+{%endif%} {%endblock%}

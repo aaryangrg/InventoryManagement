@@ -1,0 +1,4 @@
+item_name,stock,category,owner,description,date_posted
+Testing1,90,General,admin,This Item has no Description,2022-05-29 05:36:44.613644+00:00
+Frisbee,100,Sports,admin,Round Flying Disk,2022-05-29 06:58:29.192086+00:00
+Badminton Shuttle,75,Sports,admin,"Feather, 6 per box",2022-05-29 06:58:29.194692+00:00

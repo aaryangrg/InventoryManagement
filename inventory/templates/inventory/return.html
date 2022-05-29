@@ -2,13 +2,12 @@
     {%block details%}
     <ul class="messages">
         {% for message in messages %}
-        {%if message.extra_tags == "RETURN_ERROR"%}
             <div class="alert alert-danger">
                 <strong>Failed!</strong> {{message}}
             </div>
-        {%endif%}
         {% endfor %}
     </ul>
+    {%if object%}
     <div style = "display: flex; flex-direction: column;align-items: center;">
             <h1>Returning : {{item.item_name}}</h1>
             {%if object.item_quantity%}
@@ -22,4 +21,9 @@
                 <input type = "submit"></input>
             </form>
         </div>
+    {%else%}
+        <div>
+            <h3>You haven't issued any {{item.item_name}}!</h3>
+        </div>
+    {%endif%}
     {% endblock %}

@@ -52,7 +52,15 @@
         <div class="d-flex flex-row flex-wrap justify-content-center m-4 w-80">
           {% block content %}{% endblock %}
         </div>
-        <div class="w-100" style="height: 100vh">
+        <div
+          class="w-100"
+          style="
+            height: 90vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+          "
+        >
           {% block details %}{% endblock %}
         </div>
       </div>
