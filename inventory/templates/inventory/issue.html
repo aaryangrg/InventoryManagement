@@ -2,9 +2,11 @@
     {%block details%}
     <ul class="messages">
         {% for message in messages %}
+        {%if messsage.tags == "INV_MESSAGE error"%}
         <div class="alert alert-danger">
             <strong>Failed!</strong> {{message}}
           </div>
+        {%endif%}
         {% endfor %}
     </ul>
     <div style = "display: flex; flex-direction: column;align-items: center;">
@@ -16,6 +18,7 @@
                 <input type = "number" name = "quantity_issued" placeholder="Quantity" min = 0></input>
                 <input type = "submit" onclick=""></input>
             </form>
+            <p>{{failed_message}}</p>
         </div>
         {% else%}
             <h3 style = "color: red;">Sorry! Were out of Stock</h3>

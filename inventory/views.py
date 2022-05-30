@@ -1,9 +1,3 @@
-from faulthandler import disable
-from ftplib import all_errors
-from hashlib import new
-import re
-from typing import final
-from unicodedata import category
 from django.shortcuts import redirect, render, HttpResponse
 from django.http import HttpResponseForbidden
 from django.core.exceptions import PermissionDenied
@@ -17,11 +11,12 @@ from allauth.socialaccount.models import SocialAccount
 from django.contrib import messages
 import logging
 from django.contrib.auth.models import User
-from django.core.mail import EmailMessage, send_mail
+from django.core.mail import send_mail
 from datetime import datetime
 import mimetypes
 import os
 import csv
+from django.contrib.auth.decorators import login_required
 
 formatter = logging.Formatter('%(asctime)s %(message)s')
 
@@ -76,6 +71,7 @@ def filter_by_words(words, objects):
     return objects
 
 
+@login_required(login_url='/accounts/login/')
 def inventory_home(request):
     allowed_user = False
     search_category = ""
@@ -104,7 +100,7 @@ def inventory_home(request):
 
 # add restriction on who can issue
 
-
+@login_required(login_url='/accounts/login/')
 def issue_item(request, pk):
     # Check if user is not moderator -> Else throw Error
     # if not len(SocialAccount.objects.all().filter(user=request.user)):
@@ -113,14 +109,16 @@ def issue_item(request, pk):
     if Inventory.objects.all().filter(id=pk)[0].owner == request.user:
         raise PermissionDenied()
     context = {
-        'object': Inventory.objects.get(id=pk)
+        'object': Inventory.objects.get(id=pk),
+        'failed_message': ""
     }
     if request.method == "POST":
         item = Inventory.objects.get(id=pk)
         quantity_issued = request.POST.get('quantity_issued')
         if int(quantity_issued) > item.stock:
-            messages.add_message(
-                request, messages.ERROR, f'You can issue upto {item.stock} items', extra_tags="ISSUE_ERROR")
+            context["failed_message"] = f"You can issue upto {item.stock} items"
+            # messages.add_message(
+            # request, messages.ERROR, f'You can issue upto {item.stock} items', extra_tags="ISSUE_ERROR")
             return render(request, "inventory/issue.html", context)
         else:
             item.stock = item.stock - int(quantity_issued)
@@ -143,9 +141,10 @@ def issue_item(request, pk):
         return render(request, "inventory/issue.html", context)
 
 
+@login_required(login_url='/accounts/login/')
 def return_item(request, pk):
     # Check if user is moderator -> Throw error
-    if not len(SocialAccount.objects.all().filter(user=request.user)):
+    if len(SocialAccount.objects.all().filter(user=request.user)):
         raise PermissionDenied()
     item = Inventory.objects.get(id=pk)
     try:
@@ -153,13 +152,15 @@ def return_item(request, pk):
             item_id=str(item.id), order_placed_by=request.user)
         context = {
             'object': prev_order,
-            'item': item
+            'item': item,
+            'failed_message': ""
         }
         if request.method == "POST":
             quantity_returned = request.POST.get('quantity_returned')
             if int(quantity_returned) > prev_order.item_quantity:
-                messages.add_message(
-                    request, messages.ERROR, f'You can return upto {prev_order.item_quantity} items', extra_tags="RETURN_ERROR")
+                context["failed_message"] = f"You can return upto {prev_order.item_quantity} items"
+                # messages.add_message(
+                # request, messages.ERROR, f'You can return upto {prev_order.item_quantity} items', extra_tags="INV_MESSAGE")
                 return render(request, "inventory/return.html", context)
             else:
                 item.stock = item.stock + int(quantity_returned)
@@ -183,7 +184,7 @@ def return_item(request, pk):
 
 # The view showing item details
 
-
+@login_required(login_url='/accounts/login/')
 def user_profile(request, username):
     context = {
         "username": username,
@@ -193,6 +194,7 @@ def user_profile(request, username):
         return render(request, 'inventory/profile.html', context)
 
 
+@login_required(login_url='/accounts/login/')
 def file_parse(request):
     if len(SocialAccount.objects.all().filter(user=request.user)):
         raise PermissionDenied()
@@ -204,6 +206,8 @@ def file_parse(request):
         for item in item_reader:
             new_item = Inventory(item_name=item['item_name'], stock=item['stock'],
                                  category=item['category'], description=item['description'], owner=request.user, date_posted=datetime.now())
+            inventory_log.info(
+                f"{request.user} added {new_item.stock} X {new_item.item_name} to Inventory")
             new_item.save()
         return redirect('inventory-home')
     else:
@@ -212,6 +216,7 @@ def file_parse(request):
 # add restriction on only mods being able to reach this endpoint
 
 
+@login_required(login_url='/accounts/login/')
 def download_inventory(request, filename):
     # If user is not moderator -> Raise exception
     if len(SocialAccount.objects.all().filter(user=request.user)):
@@ -233,11 +238,10 @@ def download_inventory(request, filename):
                     inventory_writer.writerow(
                         {'item_name': item.item_name, 'stock': item.stock, 'category': item.category, 'description': item.description, 'owner': item.owner, 'date_posted': item.date_posted})
             inventory_file.close()
-            # opening in binary prevents errors in the case of non-ascii characters
+            # opening in binary prevents errors in decoding non-ascii characters
             path = open(filepath, 'rb')
             # Set the mime type
             mime_type, _ = mimetypes.guess_type(filepath)
-            # Set the return value of the HttpResponse
             response = HttpResponse(path, content_type=mime_type)
             # Set the HTTP header for sending to browser
             response['Content-Disposition'] = f"attachment; filename={filename}"
