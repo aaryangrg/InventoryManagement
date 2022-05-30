@@ -21,6 +21,9 @@ class Inventory(models.Model):
     category = models.TextField(choices=CATEGORY_CHOICES, default='General')
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
 
+    class Meta:
+        unique_together = ('category', 'item_name', 'description', 'owner')
+
     def __str__(self):
         return self.item_name
 

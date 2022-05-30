@@ -14,7 +14,12 @@
     style="display: flex; flex-direction: column"
   >
     {% csrf_token %}
-    <input type="file" name="data_sheet" class="btn btn-outline" />
+    <input
+      type="file"
+      name="data_sheet"
+      class="btn btn-outline"
+      accept=".csv"
+    />
     <button
       type="submit"
       style="margin-top: 30px"

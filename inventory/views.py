@@ -1,7 +1,12 @@
+from faulthandler import disable
 from ftplib import all_errors
 from hashlib import new
 import re
+from typing import final
+from unicodedata import category
 from django.shortcuts import redirect, render, HttpResponse
+from django.http import HttpResponseForbidden
+from django.core.exceptions import PermissionDenied
 from requests import request
 from .models import Inventory, Orders
 from django.views.generic import DetailView, CreateView, UpdateView, DeleteView
@@ -50,25 +55,49 @@ def setup_logger(name, log_file, level=logging.INFO):
     return logger
 
 
-# first file logger
+# INVENTORY LOG
 inventory_log = setup_logger('inventory_logger', 'Inventory.log')
 inventory_log.addFilter(ParseInventory())
 
-# second file logger
+# ORDERS LOG
 orders_log = setup_logger('orders_log', 'Orders.log')
 orders_log.addFilter(ParseTransactions())
 
 
+def filter_by_words(words, objects):
+    final_set = set()
+    for word in words:
+        for item in objects:
+            if item.item_name.lower().find(word) >= 0:
+                final_set.add(item)
+    if len(final_set) != 0:
+        return list(final_set)
+
+    return objects
+
+
 def inventory_home(request):
     allowed_user = False
+    search_category = ""
+    displayed_objects = Inventory.objects.all()
     for social_acc in SocialAccount.objects.all():
         if(str(social_acc) == str(request.user)):
             break
     else:
         allowed_user = True
+    if request.method == "POST":
+        search_category = request.POST.get('search_category')
+        search_text = request.POST.get('item_name')
+        search_words = search_text.strip().lower().split(' ')
+        if(search_category != "All"):
+            displayed_objects = Inventory.objects.all().filter(category=search_category)
+        else:
+            displayed_objects = Inventory.objects.all()
+        displayed_objects = filter_by_words(search_words, displayed_objects)
     context = {
-        'items': Inventory.objects.all(),
-        'download_allowed': allowed_user
+        'items': displayed_objects,
+        'download_allowed': allowed_user,
+        'current_category': search_category
     }
     return render(request, 'inventory/home.html', context)
 
@@ -77,6 +106,12 @@ def inventory_home(request):
 
 
 def issue_item(request, pk):
+    # Check if user is not moderator -> Else throw Error
+    # if not len(SocialAccount.objects.all().filter(user=request.user)):
+    #     raise PermissionDenied()
+    # Check if the user owns the item -> If yes throw error(issuer cannot borrow)
+    if Inventory.objects.all().filter(id=pk)[0].owner == request.user:
+        raise PermissionDenied()
     context = {
         'object': Inventory.objects.get(id=pk)
     }
@@ -109,6 +144,9 @@ def issue_item(request, pk):
 
 
 def return_item(request, pk):
+    # Check if user is moderator -> Throw error
+    if not len(SocialAccount.objects.all().filter(user=request.user)):
+        raise PermissionDenied()
     item = Inventory.objects.get(id=pk)
     try:
         prev_order = Orders.objects.get(
@@ -156,6 +194,8 @@ def user_profile(request, username):
 
 
 def file_parse(request):
+    if len(SocialAccount.objects.all().filter(user=request.user)):
+        raise PermissionDenied()
     # make sure some file is uploaded
     if request.method == 'POST' and request.FILES:
         uploaded_items = request.FILES["data_sheet"].read().decode(
@@ -173,6 +213,9 @@ def file_parse(request):
 
 
 def download_inventory(request, filename):
+    # If user is not moderator -> Raise exception
+    if len(SocialAccount.objects.all().filter(user=request.user)):
+        raise PermissionDenied()
     if filename != '':
         # Define Django project base directory
         BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -228,11 +271,10 @@ class ItemCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
         return super().form_valid(form)
 
     def test_func(self):
-        for social_acc in SocialAccount.objects.all():
-            if(str(social_acc) == str(self.request.user)):
-                return False
-        else:
+        if not len(SocialAccount.objects.all().filter(user=self.request.user)):
             return True
+        else:
+            return False
 
 
 # Updating Inventory Items -> Moderators (non-email login) + Item Owner
@@ -248,16 +290,17 @@ class ItemUpdateView(LoginRequiredMixin, UserPassesTestMixin, UpdateView):
         return super().form_valid(form)
 
     def test_func(self):
-        # only allow update screen if the person is a moderator and also owns the item
-        for social_acc in SocialAccount.objects.all():
-            if(str(social_acc) == str(self.request.user)):
+        # Is moderator?
+        if not len(SocialAccount.objects.all().filter(user=self.request.user)):
+            item = self.get_object()
+            # Is owner of the original item?
+            if self.request.user == item.owner:
+                return True
+            else:
                 return False
-        # gets object we are trying to update
-        item = self.get_object()
-        if self.request.user == item.owner:
-            return True
         else:
             return False
+
 
 # Deleting Inventory Items -> Moderators (non-email login) + Item Owner
 
@@ -268,11 +311,12 @@ class ItemDeleteView(LoginRequiredMixin, UserPassesTestMixin, DeleteView):
 
     def test_func(self):
         # See if i can make this system more efficient?
-        for social_acc in SocialAccount.objects.all():
-            if(str(social_acc) == str(self.request.user)):
+        if not len(SocialAccount.objects.all().filter(user=self.request.user)):
+            item = self.get_object()
+            # Is owner of the original item?
+            if self.request.user == item.owner:
+                return True
+            else:
                 return False
-        item = self.get_object()
-        if self.request.user == item.owner:
-            return True
         else:
             return False

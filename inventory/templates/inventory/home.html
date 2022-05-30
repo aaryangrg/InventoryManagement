@@ -1,20 +1,68 @@
-{% extends "inventory/base.html" %} {%block content%} {% for item in items%}
+{% extends "inventory/base.html" %} {%block filter%}
+<form method = "POST">
+  {% csrf_token %}
+  <div style = "width: 60%; justify-content: center; align-items: center; display: flex; margin: auto;">
+    <div class = "col">
+    <input
+      type="text"
+      class="form-control"
+      id="searched_item_name"
+      placeholder="Search by name..."
+      name = "item_name"
+    />
+  </div>
+  <div class="col-auto my-1">
+    <select class="custom-select mr-sm-2" id="category_filter" name = "search_category">
+      <option value="All">All</option>
+      <option value="General">General</option>
+      <option value="Sports">Sports</option>
+      <option value="Leisure">Leisure</option>
+      <option value="Decor">Decor</option>
+      <option value="School">School</option>
+      <option value="Kitchen">Kitchen</option>
+      <option value="Technology">Technology</option>
+    </select>
+  </div>
+  <div class = "row">
+    <button type="submit" class="btn btn-primary" style = "margin-left : 10px; justify-content: center; align-items: center; display: flex;">
+      <svg xmlns="http://www.w3.org/2000/svg" width="21" height="21" fill="currentColor" class="bi bi-search" viewBox="0 0 16 16">
+        <path d="M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0z"/>
+      </svg>
+    </button>
+    
+  </div>
+</form>
+{% endblock %} 
+{%block category%}
+<div>
+  {%if current_category%}
+    <h4>{{current_category}} Items:</h4>
+  {%endif%}
+</div>
+{%endblock%}
+{%block content%}
+ {% for item in items%}
 <div
-  class="bg-dark text-light w-40 p-4 flex-column align-items-center m-1 border border-warning d-flex"
+  class="bg-dark text-light w-40 flex-column align-items-center m-1 d-flex"
+  style = "border-radius: 15px; border : 2px solid #E83845; padding: 30px;"
 >
   <h3>{{item.item_name}}</h3>
   <h6><strong>Stock Left : {{item.stock}}</strong></h6>
-  <button
+  <!-- <button
     class="btn-success rounded border border-warning"
     onclick="window.location.href = '/inventory/{{item.id}}'"
   >
     View Details
-  </button>
+  </button> -->
+  <a class = "btn btn-outline-warning" href = "{%url 'item-details' item.id %}">View</a>
 </div>
 {% endfor %} {% endblock%} {%block details%}{%if download_allowed%}
 <div>
-  <a class="btn btn-info" href="{%url 'download-inventory' 'inventory.csv'%}"
-    >Download Inventory</a
+  <a class="btn btn-info" href="{%url 'download-inventory' 'inventory.csv'%}">
+    Download Inventory <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-file-earmark-arrow-down-fill" viewBox="0 0 16 16">
+      <path d="M9.293 0H4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V4.707A1 1 0 0 0 13.707 4L10 .293A1 1 0 0 0 9.293 0zM9.5 3.5v-2l3 3h-2a1 1 0 0 1-1-1zm-1 4v3.793l1.146-1.147a.5.5 0 0 1 .708.708l-2 2a.5.5 0 0 1-.708 0l-2-2a.5.5 0 0 1 .708-.708L7.5 11.293V7.5a.5.5 0 0 1 1 0z"/>
+    </svg>
+    </a
   >
 </div>
 {%endif%} {%endblock%}
