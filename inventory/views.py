@@ -144,7 +144,7 @@ def issue_item(request, pk):
 @login_required(login_url='/accounts/login/')
 def return_item(request, pk):
     # Check if user is moderator -> Throw error
-    if len(SocialAccount.objects.all().filter(user=request.user)):
+    if not len(SocialAccount.objects.all().filter(user=request.user)):
         raise PermissionDenied()
     item = Inventory.objects.get(id=pk)
     try:
