@@ -1,7 +1,5 @@
 #Temporary ignores
-# **/migrations/
-# **/**/migrations
-# **/migrations/*
+settings.py
 **/migrations/**
 !**/migrations
 !**/migrations/__init__.py
