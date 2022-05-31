@@ -164,6 +164,3 @@ cython_debug/
 
 #Temporary ignores
 **/migrations/**
-!**/migrations
-!**/migrations/__init__.py
-settings.py
