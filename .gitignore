@@ -1,3 +1,11 @@
+#Temporary ignores
+# **/migrations/
+# **/**/migrations
+# **/migrations/*
+**/migrations/**
+!**/migrations
+!**/migrations/__init__.py
+
 #MAC
 .DS_Store
 
@@ -162,5 +170,3 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
-#Temporary ignores
-**/migrations/
