@@ -12,24 +12,24 @@
         <h1>{{username}}</h1>
         <h2>Your Orders : </h2>
         {%for order in user_orders%}
-            <div style = "padding : 30px; border-radius: 30px; border : 2px solid black; display: flex; justify-content: center; flex-direction: column; width: 60%; margin-top: 10px;">
+            <div style = "padding : 30px; border-radius: 30px;display: flex; justify-content: center; flex-direction: column; width: 80%; margin-top: 10px; box-shadow: rgba(60, 64, 67, 0.3) 0px 1px 2px 0px, rgba(60, 64, 67, 0.15) 0px 2px 6px 2px;">
                 <h6>Order-ID : #{{order.id}}</h5>
                 <div style = "display: flex; flex-direction: row; justify-content: space-between; align-items: center;">
                 <div>
-                    <a href = "{%url 'item-details' order.item_id%}" style = "text-decoration: none;"><h2>{{order.item_name}}</h2></a>
+                    <a href = "{%url 'item-details' order.item.id%}" style = "text-decoration: none;"><h2>{{order.item.item_name}}</h2></a>
                     <h6>Quantity : {{order.item_quantity}}</h6>
                 </div>
                 <div>
                     <h6>Placed on : {{order.order_time}}</h5>
-                    <h5>Ordered From : {{order.item_owner}}</h5>
+                    <h5>Ordered From : {{order.item.owner}}</h5>
                 </div>
                 </div>  
                 <div style = "display: flex; flex-direction: row; align-items: center; margin-top: 40px; justify-content: space-between;">
                     <div>
-                    <a class="btn btn-outline-danger" href = "{% url 'item-return' order.item_id%}">
+                    <a class="btn btn-outline-danger" href = "{% url 'item-return' order.item.id%}">
                         Return
                     </a>
-                    <a class = "btn btn-outline-success" style = "margin-left: 5px;" href = "{% url 'item-issue' order.item_id%}">
+                    <a class = "btn btn-outline-success" style = "margin-left: 5px;" href = "{% url 'item-issue' order.item.id%}">
                         Add
                     </a>
                 </div>

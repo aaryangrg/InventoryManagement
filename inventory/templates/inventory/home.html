@@ -44,16 +44,10 @@
  {% for item in items%}
 <div
   class="bg-dark text-light w-40 flex-column align-items-center m-1 d-flex"
-  style = "border-radius: 15px; border : 2px solid #E83845; padding: 30px;"
+  style = "border-radius: 15px;border : 2px solid #E83845; padding: 30px;"
 >
   <h3>{{item.item_name}}</h3>
   <h6><strong>Stock Left : {{item.stock}}</strong></h6>
-  <!-- <button
-    class="btn-success rounded border border-warning"
-    onclick="window.location.href = '/inventory/{{item.id}}'"
-  >
-    View Details
-  </button> -->
   <a class = "btn btn-outline-warning" href = "{%url 'item-details' item.id %}">View</a>
 </div>
 {% endfor %} {% endblock%} {%block details%}{%if download_allowed%}

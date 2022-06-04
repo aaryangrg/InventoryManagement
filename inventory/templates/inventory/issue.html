@@ -13,10 +13,10 @@
         {%if object.stock > 0 %} 
             <h1>Issuing : {{object.item_name}}</h1>
             <h3 style = "color:greenyellow"><strong>In Stock : {{object.stock}}</strong></h1>
-            <form method="POST" style = "flex-direction: column; display: flexs;">
+            <form method="POST" style = "flex-direction: column; display: flex;">
                 {% csrf_token %}
                 <input type = "number" name = "quantity_issued" placeholder="Quantity" min = 0></input>
-                <input type = "submit" onclick=""></input>
+                <input type = "submit" style = "margin-top: 10px;"></input>
             </form>
             <p>{{failed_message}}</p>
         </div>

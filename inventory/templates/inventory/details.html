@@ -1,15 +1,19 @@
 {% extends "inventory/base.html" %} {%block details%}
 <div
-  class="text-info border border-secondary"
   style="
-    width: 50%;
-    height: 75%;
+    width: 80%;
+    min-height: 80%;
     margin: auto;
     align-items: center;
     flex-direction: column;
     display: flex;
-    background-color: black;
+    background-color: white;
     border-radius: 30px;
+    box-shadow: rgba(0, 0, 0, 0.07) 0px 1px 2px, rgba(0, 0, 0, 0.07) 0px 2px 4px,
+      rgba(0, 0, 0, 0.07) 0px 4px 8px, rgba(0, 0, 0, 0.07) 0px 8px 16px,
+      rgba(0, 0, 0, 0.07) 0px 16px 32px, rgba(0, 0, 0, 0.07) 0px 32px 64px;
+    background-color: #8ec5fc;
+    background-image: linear-gradient(62deg, #8ec5fc 0%, #e0c3fc 100%);
   "
 >
   <h1 style="margin-top: 40px"><strong>{{object.item_name|upper}}</strong></h1>
@@ -22,8 +26,44 @@
       margin-top: 40px;
     "
   >
-    <h5><strong>Date Added :</strong> {{object.date_posted}}</h5>
-    <h5><strong>Seller : </strong>{{object.owner}}</h5>
+    <h5>
+      <strong>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          fill="currentColor"
+          class="bi bi-calendar-event-fill"
+          viewBox="0 0 16 16"
+        >
+          <path
+            d="M4 .5a.5.5 0 0 0-1 0V1H2a2 2 0 0 0-2 2v1h16V3a2 2 0 0 0-2-2h-1V.5a.5.5 0 0 0-1 0V1H4V.5zM16 14V5H0v9a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2zm-3.5-7h1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-1a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5z"
+          />
+        </svg>
+        Date Added :</strong
+      >
+      {{object.date_posted}}
+    </h5>
+    <h5>
+      <strong>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          fill="currentColor"
+          class="bi bi-person-square"
+          viewBox="0 0 16 16"
+        >
+          <path d="M11 6a3 3 0 1 1-6 0 3 3 0 0 1 6 0z" />
+          <path
+            d="M2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2zm12 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1v-1c0-1-1-4-6-4s-6 3-6 4v1a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1h12z"
+          />
+        </svg>
+        Seller :</strong
+      >
+      <!-- object.owner gets returned as a string because of the __str__ function -> we dont need to access object.owner.user.username -->
+      {{object.owner}}
+    </h5>
   </div>
   <div
     style="
@@ -34,13 +74,66 @@
       flex-direction: column;
     "
   >
-    <h5><strong>Category :</strong>{{object.category}}</h5>
+    <h5>
+      <strong>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          fill="currentColor"
+          class="bi bi-tags-fill"
+          viewBox="0 0 16 16"
+        >
+          <path
+            d="M2 2a1 1 0 0 1 1-1h4.586a1 1 0 0 1 .707.293l7 7a1 1 0 0 1 0 1.414l-4.586 4.586a1 1 0 0 1-1.414 0l-7-7A1 1 0 0 1 2 6.586V2zm3.5 4a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"
+          />
+          <path
+            d="M1.293 7.793A1 1 0 0 1 1 7.086V2a1 1 0 0 0-1 1v4.586a1 1 0 0 0 .293.707l7 7a1 1 0 0 0 1.414 0l.043-.043-7.457-7.457z"
+          />
+        </svg>
+        Category :</strong
+      >
+      <!-- category model has one field which is the category_name, returned by __Str__ so we dont need to access it. -->
+      {{object.category}}
+    </h5>
     <h6 style="margin-top: 10px">
-      <strong>Description :</strong> {{object.description}}
+      <strong>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          fill="currentColor"
+          class="bi bi-menu-up"
+          viewBox="0 0 16 16"
+        >
+          <path
+            d="M7.646 15.854a.5.5 0 0 0 .708 0L10.207 14H14a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2H2a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3.793l1.853 1.854zM1 9V6h14v3H1zm14 1v2a1 1 0 0 1-1 1h-3.793a1 1 0 0 0-.707.293l-1.5 1.5-1.5-1.5A1 1 0 0 0 5.793 13H2a1 1 0 0 1-1-1v-2h14zm0-5H1V3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v2zM2 11.5a.5.5 0 0 0 .5.5h8a.5.5 0 0 0 0-1h-8a.5.5 0 0 0-.5.5zm0-4a.5.5 0 0 0 .5.5h11a.5.5 0 0 0 0-1h-11a.5.5 0 0 0-.5.5zm0-4a.5.5 0 0 0 .5.5h6a.5.5 0 0 0 0-1h-6a.5.5 0 0 0-.5.5z"
+          />
+        </svg>
+        Description :</strong
+      >
+      {{object.description}}
     </h6>
   </div>
   <div style="margin-top: 60px">
-    <h4><strong>Left in Stock :</strong> {{object.stock}}</h4>
+    <h4>
+      <strong>
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="16"
+          height="16"
+          fill="currentColor"
+          class="bi bi-box2-fill"
+          viewBox="0 0 16 16"
+        >
+          <path
+            d="M3.75 0a1 1 0 0 0-.8.4L.1 4.2a.5.5 0 0 0-.1.3V15a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V4.5a.5.5 0 0 0-.1-.3L13.05.4a1 1 0 0 0-.8-.4h-8.5ZM15 4.667V5H1v-.333L1.5 4h6V1h1v3h6l.5.667Z"
+          />
+        </svg>
+        Left in Stock :</strong
+      >
+      {{object.stock}}
+    </h4>
   </div>
   <div
     style="
@@ -51,8 +144,8 @@
       margin-top: 50px;
     "
   >
-    {%if user != object.owner %}
-    <a class="btn btn-outline-success" href="{%url 'item-issue' object.id%}"
+    {%if user != object.owner.user %}
+    <a class="btn btn-success" href="{%url 'item-issue' object.id%}"
       >Issue
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -68,7 +161,7 @@
         />
       </svg>
     </a>
-    <a class="btn btn-outline-danger" href="{% url 'item-return' object.id%}"
+    <a class="btn btn-danger" href="{% url 'item-return' object.id%}"
       >Return
       <svg
         xmlns="http://www.w3.org/2000/svg"
@@ -84,9 +177,29 @@
         />
       </svg>
     </a>
-    {% endif %} {%if user == object.owner %}
-    <a class="btn btn-outline-warning" href="{% url 'item-update' object.id%}">
-      Update
+    {% endif %} {%if user == object.owner.user %}
+    <a
+      class="btn btn-warning"
+      href="{% url 'item-update' object.id%}"
+      style="width: 20%; color: white"
+    >
+      Edit
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="16"
+        height="16"
+        fill="currentColor"
+        class="bi bi-pencil-square"
+        viewBox="0 0 16 16"
+      >
+        <path
+          d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"
+        />
+        <path
+          fill-rule="evenodd"
+          d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5v11z"
+        />
+      </svg>
     </a>
     {%endif%}
   </div>
