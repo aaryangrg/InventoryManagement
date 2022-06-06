@@ -1,6 +1,4 @@
 # from msilib.schema import Property
-from secrets import choice
-from black import Mode
 from django.db import models
 from django.db.models import Sum
 from django.contrib.auth.models import User
