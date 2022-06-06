@@ -13,12 +13,11 @@ def parse_inventory_csv(items, mod_user):
             category_name=item['category']).first(), description=item['description'])
         # if the item already exists --> update its stock to the new stock value
         if previous_item.exists():
-            previous_item = previous_item.first()
-            previous_item.stock = item["stock"]
+            previous_item.first().stock = item["stock"]
 
         else:
             new_item = Inventory(item_name=item['item_name'], category=Category.objects.filter(
                 category_name=item['category']).first(), description=item['description'], stock=item["stock"], owner=Moderator.objects.filter(user=mod_user).first(), date_posted=datetime.now())
             new_item.save()
-        previous_item.save()
+        previous_item.first().save()
     pass

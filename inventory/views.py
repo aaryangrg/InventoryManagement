@@ -146,7 +146,7 @@ def issue_item(request, pk):
                 prev_order.save()
             else:
                 new_order = Orders(item=item, item_quantity=int(
-                    quantity_issued), order_placed_by=request.user)
+                    quantity_issued), order_placed_by=Customer.objects.filter(user=request.user).first())
                 new_order.save()
             item.save()
             orders_log.error(
