@@ -1,16 +1,9 @@
-from unicodedata import category
-from black import Mode
 from django.shortcuts import redirect, render, HttpResponse
-from django.http import HttpResponseForbidden, JsonResponse
-from django.core.exceptions import PermissionDenied
-from requests import request
+from django.http import HttpResponseForbidden
 from .models import Inventory, Orders, Category, Customer, Moderator
 from django.views.generic import DetailView, CreateView, UpdateView, DeleteView
 from django.urls import reverse
 from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
-from django.contrib.messages.views import SuccessMessageMixin
-from allauth.socialaccount.models import SocialAccount
-from django.contrib import messages
 import logging
 from django.contrib.auth.models import User
 from django.core.mail import send_mail
@@ -20,17 +13,9 @@ import os
 import csv
 from django.contrib.auth.decorators import login_required
 from functools import wraps
-
+from .utils.mixins import UserIsModerator
+from .utils.parseinv import parse_inventory_csv
 formatter = logging.Formatter('%(asctime)s %(message)s')
-
-
-# SECONDARY PERMISSIONS : (class + functional views)
-class UserIsModerator(LoginRequiredMixin, UserPassesTestMixin):
-    def test_func(self):
-        return len(Moderator.objects.filter(user=self.request.user)) != 0
-
-    def handle_no_permission(self):
-        return HttpResponseForbidden("<h1>Only moderators can access this page!</h1>")
 
 
 def user_is_owner(item, user):
@@ -39,13 +24,14 @@ def user_is_owner(item, user):
     else:
         return False
 
+# Custom decorator for functional views
+
 
 def user_is_moderator(view):
     @wraps(view)
     def _view(request, *args, **kwargs):
         if not Moderator.objects.filter(user=request.user).first():
             return HttpResponseForbidden("<h1> Only moderators can access this page! </h1>")
-            # raise PermissionDenied()
         return view(request, *args, **kwargs)
     return _view
 
@@ -89,16 +75,18 @@ orders_log.addFilter(ParseTransactions())
 
 
 # check if any search word is in the item name.
-def filter_by_words(words, objects):
+def filter_by_words(words, items):
     final_set = set()
     for word in words:
-        for item in objects:
-            if item.item_name.lower().find(word) >= 0:
+        for item in items:
+            # using dunder contains of Inventory
+            if word in item:
                 final_set.add(item)
+    # if filtering by words found a match return those matches
     if len(final_set) != 0:
         return list(final_set)
-
-    return objects
+    # else return all the items filtered by category
+    return items
 
 
 @login_required(login_url='/accounts/login/')
@@ -114,8 +102,10 @@ def inventory_home(request):
         search_text = request.POST.get('item_name')
         search_words = search_text.strip().lower().split(' ')
         if(search_category != "All"):
-            displayed_objects = Inventory.objects.all().filter(
-                category=Category.objects.filter(category_name=search_category).first())
+            category = Category.objects.filter(
+                category_name=search_category).first()
+            # Using related names of Category -> Inventory
+            displayed_objects = category.category_items.all()
         else:
             displayed_objects = Inventory.objects.all()
         displayed_objects = filter_by_words(search_words, displayed_objects)
@@ -132,7 +122,6 @@ def issue_item(request, pk):
     # Owner cannot issue their own item
     if(user_is_owner(Inventory.objects.filter(id=pk).first(), request.user)):
         return HttpResponse("<h1>You cannot issue your own item!</h1>")
-        # raise PermissionDenied()
     context = {
         'object': Inventory.objects.get(id=pk),
         'failed_message': ""
@@ -146,25 +135,24 @@ def issue_item(request, pk):
             return render(request, "inventory/issue.html", context)
         else:
             item.stock = item.stock - int(quantity_issued)
+            # prev_order = Orders.objects.all().filter(item=item,
+            #                                          order_placed_by=Customer.objects.filter(user=request.user).first()).first()
+            prev_order = Customer.objects.filter(
+                user=request.user).first().orders.filter(item=item).first()
+            # If a previous order of the same item exists by the user -> update the number of items issued
+            if prev_order:
+                prev_order.item_quantity += int(quantity_issued)
+                prev_order.order_returned = False
+                prev_order.save()
+            else:
+                new_order = Orders(item=item, item_quantity=int(
+                    quantity_issued), order_placed_by=request.user)
+                new_order.save()
             item.save()
             orders_log.error(
                 f'{request.user} ordered {int(quantity_issued)} X {item.item_name}')
             send_mail('Issued Items', f'You ordered {int(quantity_issued)} X {item.item_name}. Hope you enjoy your purchase!',
                       'purchases.inventorymanagement@gmail.com', [request.user.email], fail_silently=False)
-            prev_order = Orders.objects.all().filter(item=item,
-                                                     order_placed_by=Customer.objects.filter(user=request.user).first()).first()
-            if prev_order:
-                prev_order.item_quantity += int(quantity_issued)
-                prev_order.save()
-            else:
-                # Updating number of customer orders (increases by 1)
-                curr_customer = Customer.objects.filter(
-                    user=request.user).first()
-                curr_customer.number_of_orders += 1
-                curr_customer.save()
-                new_order = Orders(item=item, item_quantity=int(
-                    quantity_issued), order_placed_by=curr_customer)
-                new_order.save()
             return redirect('inventory-home')
     else:
         return render(request, "inventory/issue.html", context)
@@ -174,10 +162,10 @@ def issue_item(request, pk):
 def return_item(request, pk):
     # Owner cannot return their own item
     if(user_is_owner(Inventory.objects.filter(id=pk).first(), request.user)):
-        raise PermissionDenied()
+        return HttpResponse("<h1>You cannot return your own item!</h1>")
     item = Inventory.objects.get(id=pk)
-    prev_order = Orders.objects.filter(
-        item=item, order_placed_by=Customer.objects.filter(user=request.user).first()).first()
+    prev_order = Customer.objects.filter(
+        user=request.user).first().orders.filter(item=item).first()
     context = {
         'object': prev_order,
         'item': item,
@@ -190,20 +178,12 @@ def return_item(request, pk):
             return render(request, "inventory/return.html", context)
         else:
             item.stock = item.stock + int(quantity_returned)
-            item.save()
-            orders_log.info(
-                f'{request.user} returned {int(quantity_returned)} X {item.item_name}')
             prev_order.item_quantity = prev_order.item_quantity - \
                 int(quantity_returned)
             if prev_order.item_quantity == 0:
-                prev_order.delete()
-                # Updating number of customer orders (decreases by 1)
-                curr_customer = Customer.objects.filter(
-                    user=request.user).first()
-                curr_customer.number_of_orders -= 1
-                curr_customer.save()
-            else:
-                prev_order.save()
+                prev_order.order_returned = True
+            prev_order.save()
+            item.save()
             orders_log.error(
                 f'{request.user} returned {int(quantity_returned)} X {item.item_name}')
             send_mail('Returned Items', f'You returned {int(quantity_returned)} X {item.item_name}. You have {prev_order.item_quantity} Left!',
@@ -215,9 +195,13 @@ def return_item(request, pk):
 
 @login_required(login_url='/accounts/login/')
 def user_profile(request, username):
+    user_orders = []
+    if Customer.objects.filter(user=request.user):
+        user_orders = Customer.objects.filter(
+            user=request.user).first().orders.filter(order_returned=False)
     context = {
         "username": username,
-        "user_orders": Orders.objects.filter(order_placed_by=Customer.objects.filter(user=request.user).first())
+        "user_orders": user_orders
     }
     if(request.user.is_authenticated and username == request.user.username):
         return render(request, 'inventory/profile.html', context)
@@ -232,13 +216,14 @@ def file_parse(request):
     if request.method == 'POST' and request.FILES:
         uploaded_items = request.FILES["data_sheet"].read().decode(
             'utf-8').split("\n")
-        item_reader = csv.DictReader(uploaded_items)
-        for item in item_reader:
-            new_item = Inventory(item_name=item['item_name'], stock=item['stock'],
-                                 category=Category.objects.filter(category_name=item['category']).first(), description=item['description'], owner=Moderator.objects.filter(user=request.user).first(), date_posted=datetime.now())
-            inventory_log.info(
-                f"{request.user} added {new_item.stock} X {new_item.item_name} to Inventory")
-            new_item.save()
+        # item_reader = csv.DictReader(uploaded_items)
+        # for item in item_reader:
+        #     new_item = Inventory(item_name=item['item_name'], stock=item['stock'],
+        #                          category=Category.objects.filter(category_name=item['category']).first(), description=item['description'], owner=Moderator.objects.filter(user=request.user).first(), date_posted=datetime.now())
+        #     inventory_log.info(
+        #         f"{request.user} added {new_item.stock} X {new_item.item_name} to Inventory")
+        #     new_item.save()
+        parse_inventory_csv(uploaded_items, request.user)
         return redirect('inventory-home')
     else:
         return render(request, 'inventory/file_upload.html')
